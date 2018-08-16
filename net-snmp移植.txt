@@ -1,0 +1,166 @@
+export PATH=/root/snmp_app/bin/:$PATH
+export PATH=/root/snmp_app/sbin/:$PATH
+export PATH=/root/snmp_app/lib/:$PATH
+
+1. 配置命令 ./configure --with-mib-modules="ftsRefTable ftsRef" --prefix=/root/snmp_arm  --exec-prefix=/root/snmp_arm --disable-shared   --disable-scripts  --disable-ipv6 --disable-manuals --disable-embedded-perl --host=arm-linux --target=arm-linux --build=i686-linux --with-cc=arm-none-linux-gnueabi-gcc --with-ar=arm-none-linux-gnueabi-ar --enable-mini-agent --enable-debugging --with-endianness=little --with-openssl=internal --enable-as-needed --disable-ucd-snmp-compatibility
+
+ ./configure --disable-shared --prefix=/root/snmp_arm  --exec-prefix=/root/snmp_arm 
+ --disable-scripts  --disable-ipv6 --disable-manuals --disable-embedded-perl --host=arm-linux --target=arm-linux 
+ --build=i686-linux --with-cc=arm-none-linux-gnueabi-gcc --with-ar=arm-none-linux-gnueabi-ar --enable-mini-agent --enable-debugging --with-endianness=little 
+ --with-openssl=internal --enable-as-needed --disable-ucd-snmp-compatibility
+
+./configure --enable-debugging --disable-shared --with-mib-modules="ftsRefTable ftsRef" --prefix=/root/snmp_arm  --exec-prefix=/root/snmp_arm --disable-scripts  --disable-ipv6 --disable-manuals --disable-embedded-perl --host=arm-linux --target=arm-linux --build=i686-linux --with-cc=arm-none-linux-gnueabi-gcc --with-ar=arm-none-linux-gnueabi-ar --enable-mini-agent --with-endianness=little --with-openssl=internal  --disable-ucd-snmp-compatibility
+
+2. 重新配置时，要先make clean
+3. 不加--disable-scripts， 编译perl目录下文件时会出错
+4. sysUpTime.0: Unknown Object Identifier (Sub-id not found: (top) -> sysUpTime)
+		解决：snmpget -m ALL -v 1 -c public localhost sysContact.0
+5. 移植教程：
+FAQ：How can I compile the project for use on an embedded system?
+FAQ：How can I compile the project to use static linking?
+
+6.   NETSNMPDIR=/root/test/net-snmp-5.7.3
+     NETSNMPCONFIG=$(NETSNMPDIR)/net-snmp-config
+
+     NETSNMPBASECFLAGS := $(shell $(NETSNMPCONFIG) --base-cflags)
+     NETSNMPINCLUDES := $(shell $(NETSNMPCONFIG) --build-includes $(NETSNMPDIR))
+     # base flags after build/src include, in case it has /usr/local/include
+     NETSNMPCFLAGS=$(NETSNMPINCLUDES) $(NETSNMPBASECFLAGS)
+
+     NETSNMPBASELIBS := $(shell $(NETSNMPCONFIG) --base-agent-libs)
+     NETSNMPEXTLIBS := $(shell $(NETSNMPCONFIG) --external-agent-libs)
+     NETSNMPLIBDIRS := $(shell $(NETSNMPCONFIG) --build-lib-dirs $(NETSNMPDIR))
+     NETSNMPLIBDEPS := $(shell $(NETSNMPCONFIG) --build-lib-deps $(NETSNMPDIR))
+     LIB_DEPS=$(NETSNMPLIBDEPS)
+     LIBS=$(NETSNMPLIBDIRS) -Wl,-Bstatic $(NETSNMPBASELIBS) -Wl,-Bdynamic $(NETSNMPEXTLIBS)
+
+     STRICT_FLAGS = -Wall -Wstrict-prototypes
+     CFLAGS=-I. $(NETSNMPCFLAGS) $(STRICT_FLAGS)
+7. readelf -d snmpd  输出程序依赖的动态库
+
+8. mkdir  snmplib/openssl
+
+9. ln -s /lib/ld-2.19.so /lib/ld-linux.so.3
+
+10. --with-mib-modules="ftsRefCfg"
+
+11. PC版net-snmp配置：./configure --prefix=/root/snmp_app  --exec-prefix=/root/snmp_app
+
+12. net-snmp客户端配置和使用：
+cp MY-MIB.txt /usr/local/share/snmp/mibs或$HOME/.snmp/mibs
+snmpwalk -m +FTS-GLOBAL-REG .....
+snmpget -m +FTS-GLOBAL-REG -v 2c -c public 127.0.0.1
+MIBS=+FTS-GLOBAL-REG mib2c -c mib2c.iterate.conf FTS-GLOBAL-REG::ftsRefTable
+snmpwalk -m +FTS-GLOBAL-REG -v 2c -c public 127.0.0.1 1.3.6.1.4.1.63000.2.1.13.1.2.1.1.7.1
+snmpd -f -Le -c ../snmpd.conf 
+
+13. ?? 代码修改：initialize_table_ftsRefTable： /* Initialise the contents of the table here */
+
+14. <snmptrapd.conf>: authCommunity log,execute,net public
+snmptrapd  -f -Lo
+snmptrap -v 1 -c public localhost "" "" 6 99 ""
+snmptrap -v 2c -c public localhost "" UCD-SNMP-MIB::ucdStart
+
+15. net-snmp VS2010下编译：配置页->连接器->附加依赖项：netsnmp.lib;netsnmpagent.lib
+
+16. When you run the net-snmp snmpd master agent, in your snmpd.conf file you must put a line that says "master agentx" to turn on the AgentX master agent support.
+
+17. cd net-snmp/perl
+   
+perl Makefile.PL [-NET-SNMP-CONFIG="sh ../../net-snmp-config"] [-NET-SNMP-IN-SOURCE=true]
+   
+make
+   
+make test
+   
+make install
+
+18. net-snmp doc: Applications->mib2c: 
+% mib2c ifTable
+ will display a description of the currently available values for CONFIGFILE.
+             GENERATING CODE FOR TABLES:
+
+              The  recommended  configuration  file  for tables is the MIBs for Dummies, or MFD, configuration file. It hides as much of the SNMP details as possible, generating small, easy to understand
+              functions.  It is also the most flexible and well documented configuration file.  See the agent/mibgroup/if-mib/ifTable/ifTable*.c files for an example:
+                      mib2c -c mib2c.mfd.conf MIBNODE
+
+              If your table data is kept somewhere else (e.g. it's in the kernel and not in the memory of the agent itself) and you need to "iterate" over it to find the right data for the SNMP row being
+              accessed.  See the agent/mibgroup/mibII/vacm_context.c file for an example:
+
+                   mib2c -c mib2c.iterate.conf MIBNODE
+
+              If  your  table  data  is  kept  in  the agent (i.e. it's not located in an external source) and is purely data driven (i.e. you do not need to perform any work when a set occurs).  See the
+              agent/mibgroup/examples/data_set.c file for an example of such a table:
+
+                   mib2c -c mib2c.create-dataset.conf MIBNODE
+
+              If your table data is kept in the agent (i.e. it's not located in an external source), and you can keep your data sorted by the table index but you do  need  to  perform  work  when  a  set
+              occurs:
+
+                   mib2c -c mib2c.array-user.conf MIBNODE
+
+              GENERATING HEADER FILE DEFINITIONS
+
+              To generate just a header with a define for each column number in your table:
+
+                   mib2c -c mib2c.column_defines.conf MIBNODE
+
+              To generate just a header with a define for each enum for any column containing enums:
+
+                   mib2c -c mib2c.column_enums.conf MIBNODE
+
+                   GENERATING CODE FOR THE 4.X LINE OF CODE (THE OLDER API)
+
+                   mib2c -c mib2c.old-api.conf MIBNODE
+19. 调试：使用eclipse，因为要调用net-snmp库，所以要把MIB MODULE 编译成动态库
+
+19. ubuntu自动锁屏解决： System Setting -> Brightness & Lock
+
+20. 
+snmpset -c public -v 1 localhost  UCD-DLMOD-MIB::dlmodStatus.1 i create 
+
+snmpset -c public -v 1 localhost UCD-DLMOD-MIB::dlmodName.1 s "nstAgentPluginObject" UCD-DLMOD-MIB::dlmodPath.1 s "/path/to/nstAgentPluginObject.so"
+
+snmpset -c public -v 1  localhost UCD-DLMOD-MIB::dlmodStatus.1 i create
+snmpget -c public -v 1  localhost UCD-DLMOD-MIB::dlmodStatus.1 i create
+snmptable -c public -v 1 localhost UCD-DLMOD-MIB::dlmodTable
+ 
+snmpget -c public -v 1 localhost NET-SNMP-TUTORIAL-MIB::nstAgentPluginObject.0
+snmpset -c public -v 1 localhost UCD-DLMOD-MIB::dlmodStatus.1 i load
+
+snmptable -c public -v 1 localhost UCD-DLMOD-MIB::dlmodTable
+
+snmpwalk -c public -v 1 localhost UCD-DLMOD-MIB::dlmodTable
+snmptranslate   -Tp -IR IP-MIB::ipMIB
+
+snmpset -c public -v 1 localhost UCD-DLMOD-MIB::dlmodName.1 s "nstAgentPluginObject" UCD-DLMOD-MIB::dlmodPath.1 s "/root/snmp_app/lib/snmp/dlmod/nstAgentPluginObject.so"
+
+MIBS="+NET-SNMP-TUTORIAL-MIB" mib2c -c mib2c.scalar.conf nstAgentModuleObject
+
+FTS-GLOBAL-REG DEFINITIONS
+
+MIBS="+FTS-GLOBAL-REG" mib2c -c mib2c.scalar.conf ftsClkClass
+./configure --with-cflags="-g -lpthread" --with-mib-modules="fts-mib" --prefix=/root/snmp_app  --exec-prefix=/root/snmp_app --disable-shared   --disable-scripts  --disable-ipv6 --disable-manuals --disable-embedded-perl   --enable-as-needed --disable-ucd-snmp-compatibility
+snmpget -c public -v 1 localhost FTS-GLOBAL-REG::ftsRefCfg.0
+snmptranslate   -Tp FTS-GLOBAL-REG::node1
+/root/snmp/net-snmp-5.7.3/agent/mibgroup/fts-mib
+sudo apt-get update
+sudo apt-get install samba
+apt-get install --reinstall libsmbclient libsmbclient-dev libtevent0 libtalloc2
+sudo service smbd restart
+
+snmpwalk -c public -v 1 localhost UCD-DLMOD-MIB::dlmodTable
+
+snmpd -Lo -Dagentx
+ifconfig eth0 192.168.10.110
+mount -t nfs  192.168.10.100:/root/ /root/
+gdbserver localhost:2020 /root/snmp_arm/sbin/snmpd
+
+arm-none-linux-gnueabi-gdb -q /root/snmp_arm/sbin/snmpd
+target remote 192.168.10.110:2020
+
+ip link set can0 up type can bitrate 250000
+
+
+
+	
