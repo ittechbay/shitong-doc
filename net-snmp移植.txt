@@ -2,7 +2,10 @@ export PATH=/root/snmp_app/bin/:$PATH
 export PATH=/root/snmp_app/sbin/:$PATH
 export PATH=/root/snmp_app/lib/:$PATH
 
-1. ≈‰÷√√¸¡Ó ./configure --with-mib-modules="ftsRefTable ftsRef" --prefix=/root/snmp_arm  --exec-prefix=/root/snmp_arm --disable-shared   --disable-scripts  --disable-ipv6 --disable-manuals --disable-embedded-perl --host=arm-linux --target=arm-linux --build=i686-linux --with-cc=arm-none-linux-gnueabi-gcc --with-ar=arm-none-linux-gnueabi-ar --enable-mini-agent --enable-debugging --with-endianness=little --with-openssl=internal --enable-as-needed --disable-ucd-snmp-compatibility
+1. ≈‰÷√√¸¡Ó 
+x86-linux: ./configure  --prefix=/work/net-snmp/app  --exec-prefix=/work/net-snmp/app   --disable-scripts  --disable-ipv6 --disable-manuals --disable-embedded-perl  --enable-debugging  --disable-ucd-snmp-compatibility
+
+arm-linux: ./configure --with-mib-modules="ftsRefTable ftsRef" --prefix=/root/snmp_arm  --exec-prefix=/root/snmp_arm --disable-shared   --disable-scripts  --disable-ipv6 --disable-manuals --disable-embedded-perl --host=arm-linux --target=arm-linux --build=i686-linux --with-cc=arm-none-linux-gnueabi-gcc --with-ar=arm-none-linux-gnueabi-ar --enable-mini-agent --enable-debugging --with-endianness=little --with-openssl=internal --enable-as-needed --disable-ucd-snmp-compatibility
 
  ./configure --disable-shared --prefix=/root/snmp_arm  --exec-prefix=/root/snmp_arm 
  --disable-scripts  --disable-ipv6 --disable-manuals --disable-embedded-perl --host=arm-linux --target=arm-linux 
@@ -19,7 +22,7 @@ export PATH=/root/snmp_app/lib/:$PATH
 FAQ£∫How can I compile the project for use on an embedded system?
 FAQ£∫How can I compile the project to use static linking?
 
-6.   NETSNMPDIR=/root/test/net-snmp-5.7.3
+6. NETSNMPDIR=/root/test/net-snmp-5.7.3
      NETSNMPCONFIG=$(NETSNMPDIR)/net-snmp-config
 
      NETSNMPBASECFLAGS := $(shell $(NETSNMPCONFIG) --base-cflags)
